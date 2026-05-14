@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2FA Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.2/otpauth.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg-void: #020408;
+            --orb-glow: #00ffff;
+            --orb-pink: #ff007f;
+            --glass-core: rgba(10, 15, 30, 0.7);
+            --text-bright: #e2f9ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text-bright);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #0a1128 0%, #020408 100%);
+            overflow: hidden;
+        }
+
+        /* Cyber Shell */
+        .cyber-shell {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 30px;
+            background: var(--glass-core);
+            border: 1px solid rgba(0, 255, 255, 0.1);
+            border-radius: 35px;
+            backdrop-filter: blur(25px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 2px rgba(255,255,255,0.05);
+            text-align: center;
+            position: relative;
+        }
+
+        .sh-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--orb-glow), #9d4edd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .sh-sub {
+            font-size: 12px;
+            color: #4e6178;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 35px;
+        }
+
+        /* Seamless Orb Input */
+        .orb-input-wrapper {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .orb-input-wrapper input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 16px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            outline: none;
+            letter-spacing: 1px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .orb-input-wrapper input:focus {
+            border-color: var(--orb-glow);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.15), inset 0 0 10px rgba(0, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .orb-input-wrapper i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4e6178;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .orb-input-wrapper input:focus + i {
+            color: var(--orb-glow);
+            text-shadow: 0 0 10px var(--orb-glow);
+        }
+
+        /* Floating Cyber Orb Display */
+        .orb-display-node {
+            display: none;
+            margin-top: 20px;
+            position: relative;
+            animation: orbPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes orbPop {
+            0% { opacity: 0; transform: scale(0.7) rotate(-45deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        /* Glowing 3D Glass Ball */
+        .hologram-orb {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.4) 50%, rgba(0,255,255,0.05) 100%);
+            border-radius: 50%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 
+                        inset 0 0 25px rgba(0, 255, 255, 0.2),
+                        0 0 30px rgba(0, 255, 255, 0.05);
+            animation: orbFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* SVG Circular Particle Ring */
+        .orb-svg {
+            position: absolute;
+            top: 0; left: 0;
+            transform: rotate(-90deg);
+            pointer-events: none;
+        }
+
+        .orb-track {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.02);
+            stroke-width: 4;
+        }
+
+        .orb-particle-line {
+            fill: none;
+            stroke: url(#orb-gradient);
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 596; /* 2 * PI * r (r=95) */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        /* Text Inner Contents */
+        .orb-core-text {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .orb-lbl {
+            font-size: 11px;
+            color: #4e6178;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 2px;
+        }
+
+        .otp-orb-code {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 34px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+            transition: all 0.2s;
+        }
+
+        .otp-orb-code:active {
+            transform: scale(0.93);
+            text-shadow: 0 0 30px var(--orb-glow);
+        }
+
+        .orb-timer-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: var(--orb-glow);
+            margin-top: 8px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .orb-toast {
+            font-size: 13px;
+            color: #00ffaa;
+            margin-top: 10px;
+            display: none;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,255,170,0.2);
+        }
+
+        .orb-error {
+            color: var(--orb-pink);
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-shell">
+        <div class="shell-header">
+            <div class="sh-title">2FA Authentication</div>
+           
+        </div>
+
+        <div class="orb-input-wrapper">
+            <input type="text" id="orbKeyInput" placeholder="Paste your 2FA Key here..." oninput="igniteOrbCore()">
+            <i class="fa-solid fa-circle-nodes"></i>
+        </div>
+
+        <div id="orbError" class="orb-error">
+            <i class="fa-solid fa-radiation"></i> ACCESS DENIED: INVALID CORE KEY
+        </div>
+
+        <div class="orb-display-node" id="orbDisplayNode">
+            <div class="hologram-orb">
+                <svg class="orb-svg" width="200" height="200">
+                    <defs>
+                        <linearGradient id="orb-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00ffff" />
+                            <stop offset="100%" stop-color="#ff007f" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="orb-track" cx="100" cy="100" r="95"></circle>
+                    <circle class="orb-particle-line" id="orbParticleLine" cx="100" cy="100" r="95"></circle>
+                </svg>
+                
+                <div class="orb-core-text">
+                    <span class="orb-lbl">CORE SEC</span>
+                    <div class="otp-orb-code" id="otpOrbCode" onclick="extractOrbToken()" title="Tap to Pull Token">000000</div>
+                    <div class="orb-timer-badge" id="orbTimerText">10s_REM</div>
+                </div>
+            </div>
+            
+            <div class="orb-toast" id="orbToast">
+                >> CORE TOKEN COPIED
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let orbLoopEngine = null;
+        let activeCoreKey = "";
+        const SYNC_WINDOW = 10; // ফিক্সড ১০ সেকেন্ড মাইক্রো পিরিয়ড
+        const MAX_OFFSET = 596; // 2 * PI * r (r=95)
+
+        function runOrbSync() {
+            if (!activeCoreKey) return;
+
+            try {
+                let cleanKey = activeCoreKey.replace(/\s+/g, '').toUpperCase();
+                
+                // ওটিপি জেনারেশন মডিউল
+                let totpEngine = new OTPAuth.TOTP({
+                    secret: cleanKey,
+                    digits: 6,
+                    period: SYNC_WINDOW
+                });
+
+                let generatedToken = totpEngine.generate();
+                document.getElementById('otpOrbCode').innerText = generatedToken;
+                document.getElementById('orbError').style.display = 'none';
+                document.getElementById('orbDisplayNode').style.display = 'block';
+
+                // ১০ সেকেন্ড টাইমিং হিসাব
+                let epoch = Math.round(new Date().getTime() / 1000);
+                let timeRemaining = SYNC_WINDOW - (epoch % SYNC_WINDOW);
+                
+                document.getElementById('orbTimerText').innerText = `${timeRemaining.toString().padStart(2, '0')}s_REM`;
+
+                // অরবিটাল পার্টিকেল রিং অ্যানিমেশন
+                let calculatedOffset = MAX_OFFSET - ((timeRemaining / SYNC_WINDOW) * MAX_OFFSET);
+                let particleRing = document.getElementById('orbParticleLine');
+                particleRing.style.strokeDashoffset = calculatedOffset;
+
+                // সময় ৩ সেকেন্ডে নামলে অরবের থিম গোলাপি/লাল ভাইব নেবে
+                if (timeRemaining <= 3) {
+                    particleRing.style.stroke = 'var(--orb-pink)';
+                } else {
+                    particleRing.style.stroke = 'url(#orb-gradient)';
+                }
+
+            } catch (ex) {
+                document.getElementById('orbError').style.display = 'block';
+                document.getElementById('orbDisplayNode').style.display = 'none';
+                if (orbLoopEngine) clearInterval(orbLoopEngine);
+            }
+        }
+
+        // লাইভ রিয়েল-টাইম কি-স্ট্রোক লিসেনার
+        function igniteOrbCore() {
+            let userRawKey = document.getElementById('orbKeyInput').value.trim();
+            
+            if (!userRawKey) {
+                document.getElementById('orbDisplayNode').style.display = 'none';
+                document.getElementById('orbError').style.display = 'none';
+                if (orbLoopEngine) clearInterval(orbLoopEngine);
+                return;
+            }
+
+            activeCoreKey = userRawKey;
+            if (orbLoopEngine) clearInterval(orbLoopEngine);
+            
+            runOrbSync();
+            orbLoopEngine = setInterval(runOrbSync, 1000);
+        }
+
+        // ট্যাপ টু এক্সট্রাক্ট টোকেন
+        function extractOrbToken() {
+            let activeToken = document.getElementById('otpOrbCode').innerText;
+            navigator.clipboard.writeText(activeToken).then(() => {
+                let toast = document.getElementById('orbToast');
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 1400);
+            });
+        }
+    </script>
+</body>
+</html>
